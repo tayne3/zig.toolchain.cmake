@@ -1,11 +1,20 @@
+<div align="center">
+
 ![zig.toolchain.cmake](assets/logo.svg)
 
 # zig.toolchain.cmake
 
-![CMake](https://img.shields.io/badge/CMake-3.12%2B-brightgreen?logo=cmake&logoColor=white)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tayne3/cunit)
+![CMake](https://img.shields.io/badge/CMake-3.14%2B-brightgreen?logo=cmake&logoColor=white)
+[![Release](https://img.shields.io/github/v/release/tayne3/zig.toolchain.cmake?include_prereleases&label=release&logo=github&logoColor=white)](https://github.com/tayne3/zig.toolchain.cmake/releases)
+[![Tag](https://img.shields.io/github/v/tag/tayne3/zig.toolchain.cmake?color=%23ff8936&style=flat-square&logo=git&logoColor=white)](https://github.com/tayne3/zig.toolchain.cmake/tags)
+[![Ubuntu](https://github.com/tayne3/zig.toolchain.cmake/workflows/ubuntu/badge.svg)](https://github.com/tayne3/zig.toolchain.cmake/actions?query=workflow%3Aubuntu)
+[![Windows](https://github.com/tayne3/zig.toolchain.cmake/workflows/windows/badge.svg)](https://github.com/tayne3/zig.toolchain.cmake/actions?query=workflow%3Awindows)
+[![macOS](https://github.com/tayne3/zig.toolchain.cmake/workflows/macos/badge.svg)](https://github.com/tayne3/zig.toolchain.cmake/actions?query=workflow%3Amacos)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tayne3/zig.toolchain.cmake)
 
 [English](README.md) | **中文**
+
+</div>
 
 一个轻量级的 CMake 工具链文件,利用 Zig 实现 C/C++ 项目的交叉编译,无需安装各平台的 GCC 工具链。
 
