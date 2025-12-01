@@ -1,0 +1,163 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "v*.*.*-*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g., v1.2.3)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  discussions: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version information
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.version }}"
+            IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            TAG="${{ github.ref_name }}"
+            # Check if tag contains pre-release identifiers
+            if [[ "$TAG" == *"-"* ]]; then
+              IS_PRERELEASE=true
+            else
+              IS_PRERELEASE=false
+            fi
+          fi
+
+          VERSION=${TAG#v}  # Remove 'v' prefix
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+
+          echo "🏷️ Tag: $TAG"
+          echo "📦 Version: $VERSION"
+          echo "🧪 Pre-release: $IS_PRERELEASE"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Basic SemVer validation
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(\-[0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*)?(\+[0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*)?$'; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Version must follow Semantic Versioning 2.0.0"
+            exit 1
+          fi
+          echo "✅ Version format is valid"
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Get the previous tag for changelog
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "$TAG" | head -n1 || echo "")
+
+          # Create release notes
+          cat > release_notes.md << EOF
+          ## 📥 Quick Installation
+
+          \`\`\`bash
+          # Download directly to your project
+          curl -o zig.toolchain.cmake https://github.com/tayne3/zig.toolchain.cmake/releases/download/$TAG/zig.toolchain.cmake
+          \`\`\`
+
+          ## 📝 Usage
+
+          \`\`\`bash
+          # Cross-compile for Linux ARM64
+          cmake -S . -B build -G Ninja \\
+            -DCMAKE_TOOLCHAIN_FILE=zig.toolchain.cmake \\
+            -DCMAKE_SYSTEM_NAME=Linux \\
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64
+
+          cmake --build build
+          \`\`\`
+
+          ## 📚 Documentation
+
+          EOF
+          echo "For complete usage instructions and examples, see the [README](https://github.com/tayne3/zig.toolchain.cmake#readme)." >> release_notes.md
+          echo "Generated release notes:"
+          cat release_notes.md
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: v${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
+
+      - name: Upload zig.toolchain.cmake
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: zig.toolchain.cmake
+          asset_name: zig.toolchain.cmake
+          asset_content_type: text/plain
+
+  update-badges:
+    name: Update Repository Badges
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: ${{ !needs.create-release.outputs.is_prerelease }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Update release badge cache
+        run: |
+          # Trigger shield.io cache refresh for release badge
+          curl -X POST "https://img.shields.io/github/v/release/tayne3/zig.toolchain.cmake?include_prereleases&label=release&logo=github&logoColor=white"
+          echo "🔄 Badge cache refresh triggered"
+
+  notify-success:
+    name: Notify Release Success
+    needs: [create-release]
+    runs-on: ubuntu-latest
+    if: success()
+    timeout-minutes: 2
+
+    steps:
+      - name: Success notification
+        run: |
+          echo "🎉 Successfully released zig.toolchain.cmake ${{ needs.create-release.outputs.version }}"
+          echo "📦 Download URL: https://github.com/tayne3/zig.toolchain.cmake/releases/download/${{ needs.create-release.outputs.tag }}/zig.toolchain.cmake"
+          echo "🔗 Release page: https://github.com/tayne3/zig.toolchain.cmake/releases/tag/${{ needs.create-release.outputs.tag }}"

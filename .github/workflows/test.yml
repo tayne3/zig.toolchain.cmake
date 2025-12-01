@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, develop]
+    paths:
+      - "zig.toolchain.cmake"
+      - "build.zig"
+      - "tests/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "zig.toolchain.cmake"
+      - "build.zig"
+      - "tests/**"
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: "Enable debug mode"
+        required: false
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: master
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: "3.25"
+
+      - name: Set up Ninja (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      - name: Set up Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja
+
+      - name: Set up Ninja (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install ninja
+
+      - name: System information
+        run: |
+          zig version
+          cmake --version
+          ninja --version
+
+      - name: Run tests
+        run: |
+          zig build test
