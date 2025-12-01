@@ -34,7 +34,7 @@ const Fixture = struct {
 };
 
 const fixtures = [_]Fixture{
-    .{ .name = "c_demo", .dir = "c_demo", .bin_name = "demo_app" },
+    .{ .name = "c_demo", .dir = "c_demo", .bin_name = "c_app" },
     .{ .name = "cpp_demo", .dir = "cpp_demo", .bin_name = "cpp_app" },
     .{ .name = "static_lib", .dir = "static_lib", .bin_name = "static_app" },
     .{ .name = "shared_lib", .dir = "shared_lib", .bin_name = "shared_app" },
@@ -75,12 +75,30 @@ const VerifyStep = struct {
 
 pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run all cross-compilation tests");
+
+    var prev_step: ?*std.Build.Step = null;
+    var test_count: usize = 0;
+
+    std.debug.print("\n" ++ "=" ** 60 ++ "\n", .{});
+    std.debug.print("[INFO] Running tests serially for maximum stability\n", .{});
+    std.debug.print("[INFO] Total tests: {d} ({d} targets × {d} fixtures)\n", .{ test_cases.len * fixtures.len, test_cases.len, fixtures.len });
+    std.debug.print("=" ** 60 ++ "\n\n", .{});
+
     for (test_cases) |t| {
         for (fixtures) |f| {
             const verify_task = VerifyStep.create(b, t, f);
+
+            if (prev_step) |prev| {
+                verify_task.step.dependOn(prev);
+            }
+
             test_step.dependOn(&verify_task.step);
+            prev_step = &verify_task.step;
+            test_count += 1;
         }
     }
+
+    std.debug.print("[INFO] {d} tests scheduled for serial execution\n\n", .{test_count});
 }
 
 fn run_cmake_and_verify(b: *std.Build, t: TargetCase, f: Fixture) !void {
