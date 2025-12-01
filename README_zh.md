@@ -5,30 +5,30 @@
 ![CMake](https://img.shields.io/badge/CMake-3.12%2B-brightgreen?logo=cmake&logoColor=white)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tayne3/cunit)
 
-**English** | [中文](README_zh.md)
+[English](README.md) | **中文**
 
-A lightweight CMake toolchain file that enables cross-compilation of C/C++ projects using Zig, eliminating the need to install platform-specific GCC toolchains.
+一个轻量级的 CMake 工具链文件,利用 Zig 实现 C/C++ 项目的交叉编译,无需安装各平台的 GCC 工具链。
 
-## Usage
+## 使用方法
 
-**Requirements**
+**前置条件**
 
 - CMake 3.14+
-- Zig Compiler
+- Zig 编译器
 
-**Integration**
+**集成**
 
-Download `zig.toolchain.cmake` to your project root or a `cmake/` subdirectory.
+将 `zig.toolchain.cmake` 下载到你的项目根目录或 `cmake/` 子目录中。
 
 ```bash
 curl -O https://raw.githubusercontent.com/tayne3/zig.toolchain.cmake/master/zig.toolchain.cmake
 ```
 
-**Cross-Compilation**
+**交叉编译**
 
-Use standard CMake variables for common targets, or specify `ZIG_TARGET` directly when you need precise ABI control (e.g., `musl` vs `gnu`).
+使用标准 CMake 变量即可满足常见需求,如需精确控制 ABI（如 `musl` vs `gnu`）可直接指定 `ZIG_TARGET`。
 
-*Compile for Linux ARM64:*
+*编译 Linux ARM64:*
 
 ```bash
 cmake -S . -B build -G Ninja \
@@ -39,7 +39,7 @@ cmake -S . -B build -G Ninja \
 cmake --build build
 ```
 
-*Compile for Windows x64:*
+*编译 Windows x64:*
 
 ```bash
 cmake -S . -B build -G Ninja \
@@ -48,7 +48,7 @@ cmake -S . -B build -G Ninja \
   -DCMAKE_SYSTEM_PROCESSOR=x86_64
 ```
 
-*Compile for Linux x86_64 (Musl/Static):*
+*编译 Linux x86_64 (Musl/Static):*
 
 ```bash
 cmake -S . -B build -G Ninja \

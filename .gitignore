@@ -1,3 +1,13 @@
-.zig-cache/
-zig-out/
-*.o
+/.vscode
+/.vs
+/.idea/
+/.cache
+/.discard/
+/.zig-cache
+/*.env
+/bin
+/out
+/build*/
+/cmake-build*/
+/zig-out
+/zig-build
