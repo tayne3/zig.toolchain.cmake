@@ -21,7 +21,7 @@
 将 `zig.toolchain.cmake` 下载到你的项目根目录或 `cmake/` 子目录中。
 
 ```bash
-curl -O https://raw.githubusercontent.com/tayne3/zig.toolchain.cmake/master/zig.toolchain.cmake
+curl -o zig.toolchain.cmake https://github.com/tayne3/zig.toolchain.cmake/releases/download/v0.1.0/zig.toolchain.cmake
 ```
 
 **交叉编译**
