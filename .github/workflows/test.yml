@@ -44,7 +44,7 @@ jobs:
       - name: Set up Zig
         uses: goto-bus-stop/setup-zig@v2
         with:
-          version: master
+          version: 0.15.2
 
       - name: Cache Zig dependencies
         uses: actions/cache@v4
