@@ -4,4 +4,4 @@
 #define IDI_MYICON 101
 
 // Define the icon resource
-IDI_MYICON ICON "icon.ico"
+IDI_MYICON ICON "../assets/icon.ico"

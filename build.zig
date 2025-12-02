@@ -1,120 +1,99 @@
 const std = @import("std");
 
-const TargetCase = struct {
-    zig_target: []const u8,
-    os_tag: std.Target.Os.Tag,
-    cpu_arch: std.Target.Cpu.Arch,
-    exe_suffix: []const u8,
+const Target = struct {
+    target: []const u8,
+    os: std.Target.Os.Tag,
+    arch: std.Target.Cpu.Arch,
 };
 
-const test_cases = [_]TargetCase{
+const targets = [_]Target{
     // Linux x64 (glibc)
-    .{ .zig_target = "x86_64-linux-gnu", .os_tag = .linux, .cpu_arch = .x86_64, .exe_suffix = "" },
+    .{ .target = "x86_64-linux-gnu", .os = .linux, .arch = .x86_64 },
     // Linux ARM64 (glibc)
-    .{ .zig_target = "aarch64-linux-gnu", .os_tag = .linux, .cpu_arch = .aarch64, .exe_suffix = "" },
+    .{ .target = "aarch64-linux-gnu", .os = .linux, .arch = .aarch64 },
     // Linux x64 (musl)
-    .{ .zig_target = "x86_64-linux-musl", .os_tag = .linux, .cpu_arch = .x86_64, .exe_suffix = "" },
+    .{ .target = "x86_64-linux-musl", .os = .linux, .arch = .x86_64 },
     // Linux ARM64 (musl)
-    .{ .zig_target = "aarch64-linux-musl", .os_tag = .linux, .cpu_arch = .aarch64, .exe_suffix = "" },
+    .{ .target = "aarch64-linux-musl", .os = .linux, .arch = .aarch64 },
     // Windows x64
-    .{ .zig_target = "x86_64-windows-gnu", .os_tag = .windows, .cpu_arch = .x86_64, .exe_suffix = ".exe" },
+    .{ .target = "x86_64-windows-gnu", .os = .windows, .arch = .x86_64 },
     // Windows ARM64
-    .{ .zig_target = "aarch64-windows-gnu", .os_tag = .windows, .cpu_arch = .aarch64, .exe_suffix = ".exe" },
+    .{ .target = "aarch64-windows-gnu", .os = .windows, .arch = .aarch64 },
     // macOS x64
-    .{ .zig_target = "x86_64-macos", .os_tag = .macos, .cpu_arch = .x86_64, .exe_suffix = "" },
+    .{ .target = "x86_64-macos", .os = .macos, .arch = .x86_64 },
     // macOS ARM64
-    .{ .zig_target = "aarch64-macos", .os_tag = .macos, .cpu_arch = .aarch64, .exe_suffix = "" },
-};
-
-const Fixture = struct {
-    name: []const u8,
-    dir: []const u8,
-    bin_name: []const u8,
-    windows_only: bool = false,
-};
-
-const fixtures = [_]Fixture{
-    .{ .name = "c_demo", .dir = "c_demo", .bin_name = "c_app" },
-    .{ .name = "cpp_demo", .dir = "cpp_demo", .bin_name = "cpp_app" },
-    .{ .name = "static_lib", .dir = "static_lib", .bin_name = "static_app" },
-    .{ .name = "shared_lib", .dir = "shared_lib", .bin_name = "shared_app" },
-    .{ .name = "windows_rc", .dir = "windows_rc", .bin_name = "rc_app", .windows_only = true },
-};
-
-const VerifyStep = struct {
-    step: std.Build.Step,
-    target_case: TargetCase,
-    fixture: Fixture,
-
-    pub fn create(b: *std.Build, t: TargetCase, f: Fixture) *VerifyStep {
-        const self = b.allocator.create(VerifyStep) catch @panic("OOM");
-        self.* = .{
-            .step = std.Build.Step.init(.{
-                .id = .custom,
-                .name = b.fmt("verify-{s}-{s}", .{ f.name, t.zig_target }),
-                .owner = b,
-                .makeFn = make,
-            }),
-            .target_case = t,
-            .fixture = f,
-        };
-        return self;
-    }
-
-    fn make(step: *std.Build.Step, options: std.Build.Step.MakeOptions) !void {
-        _ = options;
-        const self: *VerifyStep = @fieldParentPtr("step", step);
-        // Skip incompatible tests early. We don't want to fail the build for
-        // fixtures that are known to be platform-specific (e.g., Windows RC files).
-        if (self.fixture.windows_only and self.target_case.os_tag != .windows) {
-            return;
-        }
-        try run_cmake_and_verify(step.owner, self.target_case, self.fixture);
-    }
+    .{ .target = "aarch64-macos", .os = .macos, .arch = .aarch64 },
 };
 
 pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run all cross-compilation tests");
 
     var prev_step: ?*std.Build.Step = null;
-    var test_count: usize = 0;
+    var count: usize = 0;
 
     std.debug.print("\n" ++ "=" ** 60 ++ "\n", .{});
-    std.debug.print("[INFO] Running tests serially for maximum stability\n", .{});
-    std.debug.print("[INFO] Total tests: {d} ({d} targets × {d} fixtures)\n", .{ test_cases.len * fixtures.len, test_cases.len, fixtures.len });
+    std.debug.print("[INFO] Total configurations: {d}\n", .{targets.len * 2});
     std.debug.print("=" ** 60 ++ "\n\n", .{});
 
-    for (test_cases) |t| {
-        for (fixtures) |f| {
-            const verify_task = VerifyStep.create(b, t, f);
-
+    for ([_]bool{ false, true }) |use_ccache| {
+        for (targets) |t| {
+            const step = TestStep.create(b, t, use_ccache);
             if (prev_step) |prev| {
-                verify_task.step.dependOn(prev);
+                step.dependOn(prev);
             }
-
-            test_step.dependOn(&verify_task.step);
-            prev_step = &verify_task.step;
-            test_count += 1;
+            test_step.dependOn(step);
+            prev_step = step;
+            count += 1;
         }
     }
 
-    std.debug.print("[INFO] {d} tests scheduled for serial execution\n\n", .{test_count});
+    std.debug.print("[INFO] {d} test steps scheduled\n\n", .{count});
 }
 
-fn run_cmake_and_verify(b: *std.Build, t: TargetCase, f: Fixture) !void {
+const TestStep = struct {
+    step: std.Build.Step,
+    target: Target,
+    use_ccache: bool,
+
+    pub fn create(b: *std.Build, t: Target, use_ccache: bool) *std.Build.Step {
+        const self = b.allocator.create(TestStep) catch @panic("OOM");
+        const ccache_str = if (use_ccache) "ccache" else "no-ccache";
+        self.* = .{
+            .step = std.Build.Step.init(.{
+                .id = .custom,
+                .name = b.fmt("verify-{s}-{s}", .{ t.target, ccache_str }),
+                .owner = b,
+                .makeFn = make,
+            }),
+            .target = t,
+            .use_ccache = use_ccache,
+        };
+        return &self.step;
+    }
+
+    fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) !void {
+        const self: *TestStep = @fieldParentPtr("step", step);
+        try run_test(step.owner, self.target, self.use_ccache);
+    }
+};
+
+fn run_test(b: *std.Build, t: Target, use_ccache: bool) !void {
+    var timer = try std.time.Timer.start();
     const allocator = b.allocator;
     const cwd = try std.fs.cwd().realpathAlloc(allocator, ".");
     defer allocator.free(cwd);
 
     const toolchain_path = try std.fs.path.join(allocator, &.{ cwd, "zig.toolchain.cmake" });
-    const build_dir = try std.fs.path.join(allocator, &.{ cwd, "build", "tests", f.name, t.zig_target });
-    const source_dir = try std.fs.path.join(allocator, &.{ cwd, "tests", f.dir });
+    const dir_suffix = if (use_ccache) "-with-ccache" else "";
+    const dir_name = b.fmt("{s}{s}", .{ t.target, dir_suffix });
+    const build_dir = try std.fs.path.join(allocator, &.{ cwd, "build", dir_name });
+    const source_dir = try std.fs.path.join(allocator, &.{ cwd, "test" });
+    const ccache_status = if (use_ccache) "ON" else "OFF";
 
-    std.debug.print("\n[TEST] Testing Target: {s} | Fixture: {s}...\n", .{ t.zig_target, f.name });
+    std.debug.print("\n[TEST] Target: {s} | Ccache: {s}...\n", .{ t.target, ccache_status });
 
-    // We explicitly specify the toolchain file and Zig target to force CMake
-    // to use our cross-compilation logic instead of detecting the host environment.
-    const cmake_conf_args = &[_][]const u8{
+    // Configure
+    try run_command(allocator, &[_][]const u8{
         "cmake",
         "-B",
         build_dir,
@@ -123,35 +102,43 @@ fn run_cmake_and_verify(b: *std.Build, t: TargetCase, f: Fixture) !void {
         "-G",
         "Ninja",
         b.fmt("-DCMAKE_TOOLCHAIN_FILE={s}", .{toolchain_path}),
-        b.fmt("-DZIG_TARGET={s}", .{t.zig_target}),
-    };
+        b.fmt("-DZIG_TARGET={s}", .{t.target}),
+        b.fmt("-DZIG_USE_CCACHE={s}", .{ccache_status}),
+    });
 
-    const cmake_build_args = &[_][]const u8{
+    // Build
+    try run_command(allocator, &[_][]const u8{
         "cmake",
         "--build",
         build_dir,
-    };
+        "--parallel",
+        b.fmt("{d}", .{(std.Thread.getCpuCount() catch 0) + 1}),
+    });
 
-    try run_command(allocator, cmake_conf_args);
-    try run_command(allocator, cmake_build_args);
-    const bin_path = try std.fs.path.join(allocator, &.{ build_dir, b.fmt("{s}{s}", .{ f.bin_name, t.exe_suffix }) });
-    defer allocator.free(bin_path);
+    // Verify artifacts
+    const artifacts = [_][]const u8{ "c_app", "cxx_app" };
+    const exe_suffix = if (t.os == .windows) ".exe" else "";
 
-    // Validates that the generated binary actually matches the target architecture.
-    // This is crucial because CMake might silently fall back to the host compiler
-    // if the toolchain configuration is incorrect.
-    try verify_binary_header(bin_path, t.os_tag, t.cpu_arch);
-    std.debug.print("[PASS] {s} for {s}\n", .{ f.name, t.zig_target });
+    for (artifacts) |name| {
+        const bin_name = b.fmt("{s}{s}", .{ name, exe_suffix });
+        const bin_path = try std.fs.path.join(allocator, &.{ build_dir, bin_name });
+        defer allocator.free(bin_path);
+
+        try verify_binary_header(bin_path, t.os, t.arch);
+        std.debug.print("  [OK] {s}\n", .{name});
+    }
+    const duration = timer.read() / std.time.ns_per_ms;
+    std.debug.print("[PASS] All checks passed for {s} ({d}ms)\n", .{ t.target, duration });
 }
 
-const ELF_MAGIC = "\x7fELF";
-const PE_MAGIC = "MZ";
-const PE_SIGNATURE = "PE\x00\x00";
-const MACHO_MAGIC_64 = 0xFEEDFACF;
-const MACHO_CPU_TYPE_X86_64 = 0x01000007;
-const MACHO_CPU_TYPE_ARM64 = 0x0100000C;
+fn verify_binary_header(path: []const u8, os: std.Target.Os.Tag, arch: std.Target.Cpu.Arch) !void {
+    const ELF_MAGIC = "\x7fELF";
+    const PE_MAGIC = "MZ";
+    const PE_SIGNATURE = "PE\x00\x00";
+    const MACHO_MAGIC_64 = 0xFEEDFACF;
+    const MACHO_CPU_TYPE_X86_64 = 0x01000007;
+    const MACHO_CPU_TYPE_ARM64 = 0x0100000C;
 
-fn verify_binary_header(path: []const u8, os_tag: std.Target.Os.Tag, cpu_arch: std.Target.Cpu.Arch) !void {
     const file = std.fs.cwd().openFile(path, .{}) catch |err| {
         std.debug.print("Could not open binary file: {s}\n", .{path});
         return err;
@@ -163,13 +150,13 @@ fn verify_binary_header(path: []const u8, os_tag: std.Target.Os.Tag, cpu_arch: s
     if (bytes_read < 64) {
         return error.FileTooSmall;
     }
-    switch (os_tag) {
+    switch (os) {
         .linux => {
             if (!std.mem.eql(u8, buffer[0..4], ELF_MAGIC)) {
                 return error.InvalidElfMagic;
             }
             const machine = std.mem.readInt(u16, buffer[0x12..][0..2], .little);
-            switch (cpu_arch) {
+            switch (arch) {
                 .x86_64 => if (machine != 0x3E) return error.ArchMismatch,
                 .aarch64 => if (machine != 0xB7) return error.ArchMismatch,
                 else => {},
@@ -189,7 +176,7 @@ fn verify_binary_header(path: []const u8, os_tag: std.Target.Os.Tag, cpu_arch: s
             }
             const machine_offset = pe_offset + 4;
             const machine = std.mem.readInt(u16, buffer[machine_offset..][0..2], .little);
-            switch (cpu_arch) {
+            switch (arch) {
                 .x86_64 => if (machine != 0x8664) return error.ArchMismatch,
                 .aarch64 => if (machine != 0xAA64) return error.ArchMismatch,
                 else => {},
@@ -202,7 +189,7 @@ fn verify_binary_header(path: []const u8, os_tag: std.Target.Os.Tag, cpu_arch: s
             }
             const cpu_type = std.mem.readInt(u32, buffer[4..][0..4], .little);
 
-            switch (cpu_arch) {
+            switch (arch) {
                 .x86_64 => if (cpu_type != MACHO_CPU_TYPE_X86_64) return error.ArchMismatch,
                 .aarch64 => if (cpu_type != MACHO_CPU_TYPE_ARM64) return error.ArchMismatch,
                 else => {},
@@ -218,7 +205,6 @@ fn run_command(allocator: std.mem.Allocator, argv: []const []const u8) !void {
     // We rely on stderr for error reporting and exit codes for status.
     child.stdout_behavior = .Ignore;
     child.stderr_behavior = .Inherit;
-
     const term = try child.spawnAndWait();
     switch (term) {
         .Exited => |code| {
