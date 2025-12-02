@@ -6,14 +6,14 @@ on:
     paths:
       - "zig.toolchain.cmake"
       - "build.zig"
-      - "tests/**"
+      - "test/**"
       - ".github/workflows/test.yml"
   pull_request:
     branches: [master]
     paths:
       - "zig.toolchain.cmake"
       - "build.zig"
-      - "tests/**"
+      - "test/**"
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -56,11 +56,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build
-
-      - name: Set up Ninja (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install ninja
 
       - name: Set up Ninja (Windows)
         if: runner.os == 'Windows'
