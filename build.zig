@@ -7,21 +7,13 @@ const Target = struct {
 };
 
 const targets = [_]Target{
-    // Linux x64 (glibc)
     .{ .target = "x86_64-linux-gnu", .os = .linux, .arch = .x86_64 },
-    // Linux ARM64 (glibc)
     .{ .target = "aarch64-linux-gnu", .os = .linux, .arch = .aarch64 },
-    // Linux x64 (musl)
     .{ .target = "x86_64-linux-musl", .os = .linux, .arch = .x86_64 },
-    // Linux ARM64 (musl)
     .{ .target = "aarch64-linux-musl", .os = .linux, .arch = .aarch64 },
-    // Windows x64
     .{ .target = "x86_64-windows-gnu", .os = .windows, .arch = .x86_64 },
-    // Windows ARM64
     .{ .target = "aarch64-windows-gnu", .os = .windows, .arch = .aarch64 },
-    // macOS x64
     .{ .target = "x86_64-macos", .os = .macos, .arch = .x86_64 },
-    // macOS ARM64
     .{ .target = "aarch64-macos", .os = .macos, .arch = .aarch64 },
 };
 
@@ -61,7 +53,7 @@ const TestStep = struct {
         self.* = .{
             .step = std.Build.Step.init(.{
                 .id = .custom,
-                .name = b.fmt("verify-{s}-{s}", .{ t.target, ccache_str }),
+                .name = b.fmt("test-{s}-{s}", .{ t.target, ccache_str }),
                 .owner = b,
                 .makeFn = make,
             }),
@@ -90,7 +82,7 @@ fn run_test(b: *std.Build, t: Target, use_ccache: bool) !void {
     const source_dir = try std.fs.path.join(allocator, &.{ cwd, "test" });
     const ccache_status = if (use_ccache) "ON" else "OFF";
 
-    std.debug.print("\n[TEST] Target: {s} | Ccache: {s}...\n", .{ t.target, ccache_status });
+    std.debug.print("\n[TEST] {s} | Ccache: {s}\n", .{ t.target, ccache_status });
 
     // Configure
     try run_command(allocator, &[_][]const u8{
@@ -127,6 +119,7 @@ fn run_test(b: *std.Build, t: Target, use_ccache: bool) !void {
         try verify_binary_header(bin_path, t.os, t.arch);
         std.debug.print("  [OK] {s}\n", .{name});
     }
+
     const duration = timer.read() / std.time.ns_per_ms;
     std.debug.print("[PASS] All checks passed for {s} ({d}ms)\n", .{ t.target, duration });
 }
@@ -201,8 +194,6 @@ fn verify_binary_header(path: []const u8, os: std.Target.Os.Tag, arch: std.Targe
 
 fn run_command(allocator: std.mem.Allocator, argv: []const []const u8) !void {
     var child = std.process.Child.init(argv, allocator);
-    // Ignore stdout to avoid memory pressure from capturing large outputs.
-    // We rely on stderr for error reporting and exit codes for status.
     child.stdout_behavior = .Ignore;
     child.stderr_behavior = .Inherit;
     const term = try child.spawnAndWait();
