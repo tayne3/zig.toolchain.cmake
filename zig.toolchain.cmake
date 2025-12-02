@@ -4,7 +4,7 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio")
   message(FATAL_ERROR "Visual Studio generator is not supported. Please use '-G Ninja' or '-G MinGW Makefiles'.")
 endif()
 
-if(ZIG_TARGET STREQUAL "")
+if(NOT ZIG_TARGET)
   if(NOT CMAKE_SYSTEM_NAME)
     set(CMAKE_SYSTEM_NAME "${CMAKE_HOST_SYSTEM_NAME}")
   endif()
@@ -33,6 +33,12 @@ if(ZIG_TARGET STREQUAL "")
   set(ZIG_TARGET "${Z_ARCH}-${Z_OS}-${Z_ABI}")
 endif()
 
+if(ZIG_TARGET MATCHES "^-") 
+  message(FATAL_ERROR "ZIG_TARGET is not set. Please specify it manually using -DZIG_TARGET=...")
+else()
+  message(STATUS "Zig Toolchain: Targeting ${ZIG_TARGET}")
+endif()
+
 if(ZIG_TARGET MATCHES "windows")
   set(CMAKE_SYSTEM_NAME Windows)
 elseif(ZIG_TARGET MATCHES "linux")
@@ -43,8 +49,6 @@ endif()
 
 set(CMAKE_SYSTEM_VERSION 1)
 set(CMAKE_SYSTEM_PROCESSOR ${Z_ARCH})
-
-message(STATUS "Zig Toolchain: Targeting ${ZIG_TARGET}")
 
 option(ZIG_USE_CCACHE "Enable ccache optimization for Zig toolchain" OFF)
 set(ZIG_CC_PREFIX "")
