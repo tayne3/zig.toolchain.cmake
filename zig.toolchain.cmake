@@ -40,7 +40,7 @@ if(NOT ZIG_TARGET)
   set(Z_ABI "gnu")
   if(Z_OS MATCHES "darwin|macos")
     set(Z_OS "macos")
-    set(Z_ABI "none")
+    set(Z_ABI "none") # macOS uses its own ABI, not GNU
   elseif(Z_OS MATCHES "windows")
     set(Z_OS "windows")
   elseif(Z_OS MATCHES "linux")
@@ -64,6 +64,7 @@ elseif(ZIG_TARGET MATCHES "macos")
   set(CMAKE_SYSTEM_NAME Darwin)
 endif()
 
+# Dummy version satisfies CMake's cross-compilation requirements without affecting Zig's behavior
 set(CMAKE_SYSTEM_VERSION 1)
 set(CMAKE_SYSTEM_PROCESSOR ${Z_ARCH})
 
@@ -79,6 +80,7 @@ if(ZIG_USE_CCACHE)
   endif()
 endif()
 
+# Generate wrapper scripts to inject -target flag and ccache prefix transparently
 set(ZIG_SHIMS_DIR "${CMAKE_BINARY_DIR}/.zig-shims")
 file(MAKE_DIRECTORY "${ZIG_SHIMS_DIR}")
 if(CMAKE_HOST_WIN32)
@@ -110,6 +112,13 @@ set(CMAKE_C_COMPILER "${ZIG_SHIMS_DIR}/zig-cc${EXT}")
 set(CMAKE_CXX_COMPILER "${ZIG_SHIMS_DIR}/zig-c++${EXT}")
 set(CMAKE_AR "${ZIG_SHIMS_DIR}/zig-ar${EXT}" CACHE FILEPATH "Archiver" FORCE)
 set(CMAKE_RANLIB "${ZIG_SHIMS_DIR}/zig-ranlib${EXT}" CACHE FILEPATH "Ranlib" FORCE)
+
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(CMAKE_RC_COMPILER "${ZIG_SHIMS_DIR}/zig-rc${EXT}" CACHE FILEPATH "Resource Compiler" FORCE)
+  # Explicitly specify MSVC syntax because zig rc only supports this format
+  set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> <SOURCE>")
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  # Prevent CMake from searching for Xcode SDKs since Zig provides its own sysroot
+  set(CMAKE_OSX_SYSROOT "" CACHE PATH "Force empty sysroot for Zig" FORCE)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "" CACHE STRING "Force empty deployment target" FORCE)
 endif()
