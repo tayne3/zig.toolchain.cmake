@@ -1,7 +1,24 @@
 include_guard(GLOBAL)
 
+set(ZIG_TOOLCHAIN_VERSION "0.1.0")
+
 if(CMAKE_GENERATOR MATCHES "Visual Studio")
-  message(FATAL_ERROR "Visual Studio generator is not supported. Please use '-G Ninja' or '-G MinGW Makefiles'.")
+  message(FATAL_ERROR "Zig Toolchain: Visual Studio generator is not supported. Please use '-G Ninja' or '-G MinGW Makefiles'.")
+endif()
+
+find_program(ZIG_COMPILER zig)
+if(NOT ZIG_COMPILER)
+  message(FATAL_ERROR "Zig Toolchain: Zig compiler not found. Please install Zig and ensure it is in your PATH.")
+endif()
+
+execute_process(
+  COMMAND zig version
+  OUTPUT_VARIABLE ZIG_COMPILER_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE ZIG_VERSION_RESULT
+)
+if(NOT ZIG_VERSION_RESULT EQUAL 0)
+  message(FATAL_ERROR "Zig Toolchain: Zig compiler found but failed to get version.")
 endif()
 
 if(NOT ZIG_TARGET)
@@ -34,9 +51,9 @@ if(NOT ZIG_TARGET)
 endif()
 
 if(ZIG_TARGET MATCHES "^-") 
-  message(FATAL_ERROR "ZIG_TARGET is not set. Please specify it manually using -DZIG_TARGET=...")
+  message(FATAL_ERROR "Zig Toolchain: ZIG_TARGET is not set. Please specify it manually using -DZIG_TARGET=...")
 else()
-  message(STATUS "Zig Toolchain: Targeting ${ZIG_TARGET}")
+  message(STATUS "Zig Toolchain: v${ZIG_COMPILER_VERSION} → ${ZIG_TARGET}")
 endif()
 
 if(ZIG_TARGET MATCHES "windows")
@@ -56,7 +73,7 @@ if(ZIG_USE_CCACHE)
   find_program(CCACHE_TOOL ccache)
   if(CCACHE_TOOL)
     set(ZIG_CC_PREFIX "${CCACHE_TOOL} ")
-    message(STATUS "Zig Toolchain: ccache enabled (${CCACHE_TOOL})")
+    message(STATUS "Zig Toolchain: ccache enabled at ${CCACHE_TOOL}")
   else()
     message(WARNING "Zig Toolchain: ZIG_USE_CCACHE is ON but 'ccache' was not found in PATH.")
   endif()
