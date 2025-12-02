@@ -4,12 +4,11 @@
 
 # zig.toolchain.cmake
 
-![CMake](https://img.shields.io/badge/CMake-3.14%2B-brightgreen?logo=cmake&logoColor=white)
 [![Release](https://img.shields.io/github/v/release/tayne3/zig.toolchain.cmake?include_prereleases&label=release&logo=github&logoColor=white)](https://github.com/tayne3/zig.toolchain.cmake/releases)
 [![Tag](https://img.shields.io/github/v/tag/tayne3/zig.toolchain.cmake?color=%23ff8936&style=flat-square&logo=git&logoColor=white)](https://github.com/tayne3/zig.toolchain.cmake/tags)
 [![Tests](https://github.com/tayne3/zig.toolchain.cmake/actions/workflows/test.yml/badge.svg)](https://github.com/tayne3/zig.toolchain.cmake/actions/workflows/test.yml)
-[![License](https://img.shields.io/github/license/tayne3/zig.toolchain.cmake)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tayne3/zig.toolchain.cmake)
+![CMake](https://img.shields.io/badge/CMake-3.14%2B-brightgreen?logo=cmake&logoColor=white)
+![Zig](https://img.shields.io/badge/Zig-0.14.0%2B-blue?logo=zig&logoColor=white)
 
 [English](README.md) | **中文**
 
