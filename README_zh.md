@@ -8,7 +8,6 @@
 [![Tag](https://img.shields.io/github/v/tag/tayne3/zig.toolchain.cmake?color=%23ff8936&style=flat-square&logo=git&logoColor=white)](https://github.com/tayne3/zig.toolchain.cmake/tags)
 [![Tests](https://github.com/tayne3/zig.toolchain.cmake/actions/workflows/test.yml/badge.svg)](https://github.com/tayne3/zig.toolchain.cmake/actions/workflows/test.yml)
 ![CMake](https://img.shields.io/badge/CMake-3.14%2B-brightgreen?logo=cmake&logoColor=white)
-![Zig](https://img.shields.io/badge/Zig-0.14.0%2B-blue?logo=zig&logoColor=white)
 
 [English](README.md) | **中文**
 
@@ -28,7 +27,7 @@
 将 `zig.toolchain.cmake` 下载到你的项目根目录或 `cmake/` 子目录中。
 
 ```bash
-curl -o zig.toolchain.cmake https://github.com/tayne3/zig.toolchain.cmake/releases/download/v0.1.0/zig.toolchain.cmake
+curl -o zig.toolchain.cmake https://github.com/tayne3/zig.toolchain.cmake/releases/download/v0.1.1/zig.toolchain.cmake
 ```
 
 **交叉编译**
