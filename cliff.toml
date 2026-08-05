@@ -1,0 +1,55 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# Remove leading/trailing whitespace from the rendered body.
+trim = true
+# Tera template rendered for the released version.
+# https://keats.github.io/tera/docs/
+body = '''
+## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}
+
+## 📝 What's Changed
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | upper_first }}
+{%- for commit in commits %}
+- {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}
+{%- endfor %}
+{% endfor %}
+
+## 📥 Quick Installation
+
+```bash
+# Download directly to your project
+curl -o zig-toolchain.cmake https://github.com/tayne3/zig-toolchain.cmake/releases/download/{{ version }}/zig-toolchain.cmake
+```
+
+## 📝 Usage
+
+```bash
+# Cross-compile for Linux ARM64
+cmake -S . -B build -G Ninja \
+-DCMAKE_TOOLCHAIN_FILE=zig-toolchain.cmake \
+-DCMAKE_SYSTEM_NAME=Linux \
+-DCMAKE_SYSTEM_PROCESSOR=aarch64
+
+cmake --build build
+```
+'''
+
+[git]
+# Parse commit messages per https://www.conventionalcommits.org
+conventional_commits = true
+# Drop commits that don't follow the conventional commits spec.
+filter_unconventional = true
+# Drop commits not matched by any commit_parsers rule (only feat/fix/perf kept).
+filter_commits = true
+# Trim leading whitespace so e.g. " feat: ..." commits still parse.
+commit_preprocessors = [{ pattern = '^\s+', replace = '' }]
+# Group commits. The "<!-- n -->" prefixes force declaration order under
+# group_by; they are stripped from the heading via the `striptags` filter.
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->🚀 Features" },
+  { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+  { message = "^perf", group = "<!-- 2 -->⚡ Performance" },
+]

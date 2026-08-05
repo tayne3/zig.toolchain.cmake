@@ -75,42 +75,26 @@ jobs:
           fi
           echo "✅ Version format is valid"
 
-      - name: Generate release notes
-        id: release_notes
+      - name: Compute changelog range
+        id: changelog_range
         run: |
           TAG="${{ steps.version.outputs.tag }}"
-          VERSION="${{ steps.version.outputs.version }}"
+          PREV_TAG=$(git tag --sort=-version:refname | grep -vFx "$TAG" | head -n1 || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            ARGS="--tag $TAG $PREV_TAG..HEAD"
+          else
+            ARGS="--tag $TAG"
+          fi
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
 
-          # Get the previous tag for changelog
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "$TAG" | head -n1 || echo "")
+      - name: Install git-cliff
+        uses: taiki-e/install-action@git-cliff
 
-          # Create release notes
-          cat > release_notes.md << EOF
-          ## 📥 Quick Installation
-
-          \`\`\`bash
-          # Download directly to your project
-          curl -o zig-toolchain.cmake https://github.com/tayne3/zig-toolchain.cmake/releases/download/$TAG/zig-toolchain.cmake
-          \`\`\`
-
-          ## 📝 Usage
-
-          \`\`\`bash
-          # Cross-compile for Linux ARM64
-          cmake -S . -B build -G Ninja \\
-            -DCMAKE_TOOLCHAIN_FILE=zig-toolchain.cmake \\
-            -DCMAKE_SYSTEM_NAME=Linux \\
-            -DCMAKE_SYSTEM_PROCESSOR=aarch64
-
-          cmake --build build
-          \`\`\`
-
-          ## 📚 Documentation
-
-          EOF
-          echo "For complete usage instructions and examples, see the [README](https://github.com/tayne3/zig-toolchain.cmake#readme)." >> release_notes.md
-          echo "Generated release notes:"
-          cat release_notes.md
+      - name: Generate release notes
+        run: |
+          git-cliff ${{ steps.changelog_range.outputs.args }} \
+            --config cliff.toml \
+            --output release_notes.md
 
       - name: Create Release
         env:
