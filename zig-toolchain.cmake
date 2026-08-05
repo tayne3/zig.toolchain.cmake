@@ -221,7 +221,7 @@ endif()
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(CMAKE_RC_COMPILER "${_zig_shims_dir}/zig-rc${_zig_wrapper_ext}" CACHE FILEPATH "Resource Compiler" FORCE)
   # Explicitly specify MSVC syntax because zig rc only supports this format
-  set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> <SOURCE>")
+  set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> -- <SOURCE>")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   # Prevent CMake from searching for Xcode SDKs since Zig provides its own sysroot
   set(CMAKE_OSX_SYSROOT "" CACHE PATH "Force empty sysroot for Zig" FORCE)
