@@ -52,7 +52,8 @@ else()
   set(ZIG_VERSION_DEV "")
 endif()
 
-if(ZIG_COMPILER_VERSION VERSION_LESS "0.15.0")
+set(_zig_version_numeric "${ZIG_VERSION_MAJOR}.${ZIG_VERSION_MINOR}.${ZIG_VERSION_PATCH}")
+if(_zig_version_numeric VERSION_LESS "0.15.0")
   message(WARNING
     "Zig Toolchain: Zig ${ZIG_COMPILER_VERSION} predates the recommended minimum (0.15.0). "
     "Toolchain behaviour is untested on this version.")
