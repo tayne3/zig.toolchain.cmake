@@ -81,10 +81,23 @@ if(NOT ZIG_TARGET)
   endif()
 
   string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" ZIG_ARCH)
-  if(ZIG_ARCH MATCHES "arm64|aarch64")
+  if(ZIG_ARCH MATCHES "^(arm64|aarch64)$")
     set(ZIG_ARCH "aarch64")
-  elseif(ZIG_ARCH MATCHES "x64|x86_64|amd64")
+  elseif(ZIG_ARCH MATCHES "^(x64|x86_64|amd64)$")
     set(ZIG_ARCH "x86_64")
+  elseif(ZIG_ARCH MATCHES "^(x86|i[3-6]86)$")
+    set(ZIG_ARCH "x86")
+  elseif(ZIG_ARCH MATCHES "^(armv[0-9].*|armhf|arm)$")
+    set(ZIG_ARCH "arm")
+  elseif(ZIG_ARCH MATCHES "^(riscv32|riscv64)$")
+    # nothing to rewrite
+  elseif(ZIG_ARCH MATCHES "^(ppc64le|powerpc64le)$")
+    set(ZIG_ARCH "powerpc64le")
+  else()
+    message(WARNING
+      "Zig Toolchain: Unrecognized CMAKE_SYSTEM_PROCESSOR '${CMAKE_SYSTEM_PROCESSOR}'. "
+      "Passing it through as-is ('${ZIG_ARCH}'); set ZIG_TARGET explicitly if this fails."
+    )
   endif()
 
   string(TOLOWER "${CMAKE_SYSTEM_NAME}" ZIG_OS)
