@@ -1,13 +1,24 @@
+# ide
 /.vscode/
 /.vs/
 /.idea/
+/.zed/
+/.cursor/
+/.agents/
 /.cache/
 /.discard/
+
+# zig
 /.zig-cache/
-/*.env
-[Bb]in/
-[Oo]ut/
-build/
-cmake-build-*/
 zig-out/
 zig-build/
+
+# macOS
+.DS_Store
+
+# cmake
+cmake-build-*/
+/build-*/
+/build_*/
+/build/
+/out/
