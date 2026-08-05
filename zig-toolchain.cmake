@@ -1,5 +1,5 @@
 # ==============================================================================
-# zig-toolchain.cmake v0.3.0
+# zig-toolchain.cmake v0.3.1
 #
 # Copyright (c) 2025 tayne3
 # Licensed under the MIT License.
