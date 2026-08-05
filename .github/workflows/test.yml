@@ -82,6 +82,7 @@ jobs:
       - name: Set up Build Tools (macOS)
         if: runner.os == 'macOS'
         run: |
+          brew trust aws/tap
           brew install ninja ccache
 
       - name: System information
