@@ -79,7 +79,7 @@ jobs:
         id: changelog_range
         run: |
           TAG="${{ steps.version.outputs.tag }}"
-          PREV_TAG=$(git tag --sort=-version:refname | grep -vFx "$TAG" | head -n1 || echo "")
+          PREV_TAG=$(git tag --sort=-version:refname | grep -vFx "$TAG" | grep -v -- '-' | head -n1 || echo "")
           if [ -n "$PREV_TAG" ]; then
             ARGS="--tag $TAG $PREV_TAG..HEAD"
           else

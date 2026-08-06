@@ -44,6 +44,8 @@ conventional_commits = true
 filter_unconventional = true
 # Drop commits not matched by any commit_parsers rule (only feat/fix/perf kept).
 filter_commits = true
+# Ignore pre-release tags (e.g. v0.3.1-rc.1) when computing releases.
+ignore_tags = "^v[0-9.]*-"
 # Trim leading whitespace so e.g. " feat: ..." commits still parse.
 commit_preprocessors = [{ pattern = '^\s+', replace = '' }]
 # Group commits. The "<!-- n -->" prefixes force declaration order under
