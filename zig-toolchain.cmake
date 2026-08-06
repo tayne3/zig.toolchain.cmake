@@ -212,11 +212,9 @@ set(CMAKE_NM                  "${_zig_shims_dir}/zig-nm${_zig_wrapper_ext}"     
 set(CMAKE_OBJCOPY             "${_zig_shims_dir}/zig-objcopy${_zig_wrapper_ext}" CACHE FILEPATH "Objcopy"      FORCE)
 set(CMAKE_STRIP               "${_zig_shims_dir}/zig-strip${_zig_wrapper_ext}"   CACHE FILEPATH "Strip"        FORCE)
 
-if(CMAKE_HOST_WIN32)
-  # Unsupported linker arg: --dependency-file. See https://github.com/ziglang/zig/issues/22213
-  set(CMAKE_C_LINKER_DEPFILE_SUPPORTED   FALSE)
-  set(CMAKE_CXX_LINKER_DEPFILE_SUPPORTED FALSE)
-endif()
+# Unsupported linker arg: --dependency-file. See https://github.com/ziglang/zig/issues/22213
+set(CMAKE_C_LINKER_DEPFILE_SUPPORTED   FALSE)
+set(CMAKE_CXX_LINKER_DEPFILE_SUPPORTED FALSE)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(CMAKE_RC_COMPILER "${_zig_shims_dir}/zig-rc${_zig_wrapper_ext}" CACHE FILEPATH "Resource Compiler" FORCE)
